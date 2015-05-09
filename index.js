@@ -9,37 +9,32 @@ module.exports = {
 
 
 /**
- * @param {Object}
- * @return {function(new:strct.Struct)}
- */
-function makeStruct(structDef) {
-  var Ctor = makeCtor(structDef)
-
-  for (var propName in structDef) {
-    addProperty(Ctor, propName, structDef[propName])
-  }
-
-  return Ctor
-}
-
-
-/**
  * Create the Struct constructor
  * @param {Object} structDef
  * @return {function(new:strct.Struct)}
  */
-function makeCtor(structDef) {
-  var Ctor = function Struct(obj) {
+function makeStruct(structDef) {
+  for (var propName in structDef) {
+    assert.equal(typeof structDef[propName], 'function',
+        'Property descriptors must be constructors')
+  }
+
+
+  return function Struct(obj) {
     assert(obj && typeof obj == 'object', 'Cannot instantiate a Struct with a non-object')
 
     // Set up core data proxy
     Object.defineProperty(this, '__data', {value: {}})
 
+    for (var propName in structDef) {
+      addProperty(this, propName, structDef[propName])
+    }
+
     // Instantiate fields
     for (var key in obj) {
       // Only check for the field existing here, type checking happens in the setter
       assert(structDef.hasOwnProperty(key), 'Struct does not have field "' + key + '"')
-      this[key] = value
+      this[key] = obj[key]
     }
 
     // TODO Consider instantiating defaults in structDef?
@@ -47,8 +42,6 @@ function makeCtor(structDef) {
     // Prevent monkey-patching other properties
     Object.seal(this)
   }
-
-  return Ctor
 }
 
 
@@ -58,10 +51,9 @@ function makeCtor(structDef) {
  * @param {string} propName
  * @param {Function} Descriptor
  */
-function addProperty(Ctor, propName, Descriptor) {
-  assert(typeof Descriptor == 'function', 'Property descriptors must be constructors')
-
-  Object.defineProperty(Ctor.prototype, propName, {
+function addProperty(obj, propName, Descriptor) {
+  Object.defineProperty(obj, propName, {
+    enumerable: true,
     get: function getter() {
       // Getters just proxy to the underlying data
       return this.__data[propName]
@@ -81,7 +73,7 @@ function getPropertySetter(propName, Descriptor) {
 
   return function setter(value) {
     var type = typeof value
-    assert(value == expectedType, 'Expected type ' + expectedType + ' but was ' + type)
+    assert(type == expectedType, 'Expected type ' + expectedType + ' but was ' + type)
 
     assert(type != 'object' || value instanceof Descriptor,
         'Expected instance of ' + Descriptor.name + ' but was ' + value.constructor.name)

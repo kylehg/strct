@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/kylehg/strct/issues"
   },
-  "homepage": "https://github.com/kylehg/strct#readme"
+  "homepage": "https://github.com/kylehg/strct#readme",
+  "devDependencies": {
+    "mocha": "^2.2.4"
+  }
 }
